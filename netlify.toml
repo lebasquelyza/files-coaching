@@ -1,14 +1,16 @@
-# --- ta config existante ---
+# netlify.toml — configuration du site questionnaire.files-coaching.com
+
+# Ta config functions existante (conservée)
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# --- activer l’Edge Function de garde sur tout le site ---
+# Active l’Edge Function de garde sur TOUTES les routes
 [[edge_functions]]
 path = "/*"
 function = "gate-questionnaire"
 
-# --- (optionnel mais recommandé) en-têtes de sécurité et pas d'embed ---
+# En-têtes de sécurité recommandés
 [[headers]]
 for = "/*"
   [headers.values]
