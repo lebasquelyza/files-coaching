@@ -1,6 +1,5 @@
 // netlify/edge-functions/gate-questionnaire.js
-// Vérifie un token signé (HMAC SHA-256) passé en ?t=... ou header x-fc-token.
-// Le token contient exp (ms epoch), aud='questionnaire' et src (doit provenir du profil).
+// Exige un token HMAC (via ?t=... ou x-fc-token). Sinon → page blanche "Site privé".
 
 const textEncoder = new TextEncoder();
 
@@ -17,20 +16,37 @@ function b64urlDecode(str) {
 }
 async function hmacSHA256(secret, data) {
   const key = await crypto.subtle.importKey(
-    'raw', textEncoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' },
+    'raw', textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
     false, ['sign']
   );
   const sig = await crypto.subtle.sign('HMAC', key, textEncoder.encode(data));
   return new Uint8Array(sig);
 }
 
+function privatePage() {
+  const html = `<!doctype html><meta charset="utf-8">
+<title>Site privé</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{color-scheme:light;}
+  html,body{height:100%;margin:0;background:#fff;}
+  .wrap{min-height:100%;display:grid;place-items:center;}
+  .txt{font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif;
+       color:#111;font-size:16px;font-weight:600;}
+</style>
+<div class="wrap"><div class="txt">Site privé</div></div>`;
+  return new Response(html, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8' } });
+}
+
 export default async (request, context) => {
   const secret = Deno.env.get('FC_SHARED_SECRET') || '';
   if (!secret) {
-    return new Response('Misconfiguration: FC_SHARED_SECRET missing', { status: 500 });
+    // Même en cas de mauvaise conf, on n’expose rien : page privée
+    return privatePage();
   }
 
-  // On exige que le token ait été généré depuis /dashboard/profile
   const REQUIRED_SRC_PREFIX = 'https://appli.files-coaching.com/dashboard/profile';
 
   const url = new URL(request.url);
@@ -59,18 +75,10 @@ export default async (request, context) => {
   }
 
   if (!ok) {
-    const html = `<!doctype html><meta charset="utf-8">
-<title>Accès refusé</title><meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto;padding:24px;color:#111}
-.card{max-width:640px;margin:10vh auto;border:1px solid #e5e7eb;border-radius:14px;padding:24px}
-a{color:#16a34a;text-decoration:none;font-weight:600}</style>
-<div class="card">
-  <h1>Accès refusé</h1>
-  <p>Ouvre le questionnaire depuis ton profil dans l’application Files Coaching.</p>
-  <p><a href="https://appli.files-coaching.com/dashboard/profile">Retourner à mon profil</a></p>
-</div>`;
-    return new Response(html, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8' } });
+    // Accès direct / token invalide → page blanche "Site privé"
+    return privatePage();
   }
 
+  // Token valide → on laisse passer vers la page
   return context.next();
 };
