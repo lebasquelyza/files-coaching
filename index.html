@@ -10,16 +10,26 @@
   <title>Files Coaching — Questionnaire</title>
   <style>
     :root{
+      /* Vert de l’appli détecté dans ta page */
+      --app-green:#16a34a;   /* vert principal */
+      --app-green-dark:#15803d; /* nuance plus sombre */
+
       --bg:#ffffff;--text:#111111;--muted:#374151;--panel:#ffffff;--line:#e5e7eb;
-      --brand:#16a34a;--brand2:#15803d;--accent:#0ea5e9;--radius:14px;--shadow:0 6px 18px rgba(0,0,0,.08);
+      --brand:var(--app-green);
+      --brand2:var(--app-green-dark);
+      --accent:#0ea5e9;--radius:14px;--shadow:0 6px 18px rgba(0,0,0,.08);
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;background:var(--bg);color:var(--text);line-height:1.6}
     .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(6px);background:#fffffff2;border-bottom:1px solid var(--line)}
     .topbar-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#0b0f14}
-    .brand .logo{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;
-      background:linear-gradient(135deg,var(--brand),var(--accent));color:#fff;font-size:18px;box-shadow:0 4px 10px rgba(22,163,74,.25)}
+    /* Carré vert sans emoji */
+    .brand .logo{
+      width:36px;height:36px;border-radius:10px;display:block;
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      box-shadow:0 4px 10px rgba(22,163,74,.25);
+    }
     .top-actions a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;text-decoration:none;
       color:#111;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;box-shadow:var(--shadow)}
     .top-actions a:hover{background:#f8fafc}
@@ -54,7 +64,10 @@
 
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand"><div class="logo">💪</div> Files Coaching</div>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        Files Coaching
+      </div>
       <div class="top-actions">
         <a href="mailto:sportifandpro@gmail.com">✉️ Nous contacter</a>
       </div>
@@ -65,7 +78,7 @@
     <section id="formulaire" class="hero">
       <div class="card">
         <h2 class="title">Questionnaire coaching</h2>
-        <p class="subtitle">Remplis ce formulaire. <b>Files & son équipe</b> étudient tes réponses pour bâtir ton programme.</p>
+        <p class="subtitle">Remplis ce formulaire. <b>Files</b> étudie tes réponses pour bâtir ton programme.</p>
 
         <div class="steps">
           <div class="step"><b>1 · Infos</b><span>Présente toi</span></div>
@@ -143,7 +156,7 @@
     <section id="thanks" class="hero" hidden>
       <div class="card center">
         <h2 class="title">Merci 🎉</h2>
-        <p class="subtitle">Merci pour ta réponse ! Files et son équipe se chargent de les examiner et de revenir vers toi avec un programme adapté!</p>
+        <p class="subtitle">Merci pour ta réponse ! Files se charge de les examiner et de revenir vers toi avec un programme adapté !</p>
         <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <a class="btn ghost" href="https://appli.files-coaching.com/dashboard/profile">Aller vers mes séances</a>
         </div>
@@ -207,9 +220,7 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: encode({ 'form-name': form.getAttribute('name') || 'coaching', ...data }),
           });
-        } catch (e2) {
-          console.warn('Netlify Forms POST failed (non-bloquant):', e2);
-        }
+        } catch (e2) {}
 
         // 3) Google Sheets via Apps Script (non-bloquant aussi)
         try {
@@ -218,15 +229,12 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: encode(data),
           });
-        } catch (e3) {
-          console.warn('Apps Script POST failed (non-bloquant):', e3);
-        }
+        } catch (e3) {}
 
         // 4) Affiche "merci"
         form.reset();
         showThanks();
       } catch (err) {
-        console.error(err);
         msg.textContent = "Oups… impossible d’envoyer. " + String(err?.message || "");
         msg.style.display = 'block';
       } finally {
